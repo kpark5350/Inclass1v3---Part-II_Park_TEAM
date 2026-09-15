@@ -1,86 +1,105 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: DefaultTabController(length: 4, child: TabsDemo()),
+    return MaterialApp(
+      home: DefaultTabController(
+        length: 4,
+        child: _TabsNonScrollableDemo(),
+      ),
     );
   }
 }
 
-class TabsDemo extends StatefulWidget {
-  const TabsDemo({super.key});
-
+class _TabsNonScrollableDemo extends StatefulWidget {
   @override
-  State<TabsDemo> createState() => _TabsDemoState();
+  __TabsNonScrollableDemoState createState() => __TabsNonScrollableDemoState();
 }
 
-class _TabsDemoState extends State<TabsDemo>
-    with SingleTickerProviderStateMixin {
+class __TabsNonScrollableDemoState extends State<_TabsNonScrollableDemo>
+    with SingleTickerProviderStateMixin, RestorationMixin {
   late TabController _tabController;
 
-  final tabs = ['Tab 1', 'Tab 2', 'Tab 3', 'Tab 4'];
+  final RestorableInt tabIndex = RestorableInt(0);
+
+  @override
+  String get restorationId => 'tab_non_scrollable_demo';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(tabIndex, 'tab_index');
+    _tabController.index = tabIndex.value;
+  }
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+
+    _tabController = TabController(
+      initialIndex: 0,
+      length: 4,
+      vsync: this,
+    );
+
+    _tabController.addListener(() {
+      setState(() {
+        tabIndex.value = _tabController.index;
+      });
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    tabIndex.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final tabs = ['Tab 1', 'Tab 2', 'Tab 3', 'Tab 4'];
+    final colors = [
+      Colors.red,
+      Colors.blue,
+      Colors.green,
+      Colors.yellow,
+    ];
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Tabs Demo'),
+        title: Text(
+          'Tabs Demo',
+        ),
         bottom: TabBar(
           controller: _tabController,
           isScrollable: false,
-          tabs: [for (final tab in tabs) Tab(text: tab)],
+          tabs: [
+            for (final tab in tabs) Tab(text: tab),
+          ],
         ),
       ),
-
-      bottomNavigationBar: const BottomAppBar(
-        child: SizedBox(
-          height: 50,
-          child: Center(
-            child: Text(
-              'My Flutter Tab App',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-      ),
-
       body: TabBarView(
         controller: _tabController,
         children: [
+          // Tab 1 — Styled Text + AlertDialog
           Container(
-            color: Colors.lightBlue.shade100,
+            color: colors[0],
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Welcome to Tab 1!',
+                  Text(
+                    'Welcome to ${tabs[0]}!',
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue,
+                      color: Colors.blue[900],
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -88,16 +107,16 @@ class _TabsDemoState extends State<TabsDemo>
                     onPressed: () {
                       showDialog(
                         context: context,
-                        builder: (context) {
+                        builder: (BuildContext ctx) {
                           return AlertDialog(
-                            title: const Text('Hello!'),
+                            title: const Text('Alert Dialog'),
                             content: const Text(
-                              'This is an AlertDialog from Tab 1.',
+                              'This is an AlertDialog in Tab 1.',
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () {
-                                  Navigator.pop(context);
+                                  Navigator.of(ctx).pop();
                                 },
                                 child: const Text('OK'),
                               ),
@@ -106,49 +125,52 @@ class _TabsDemoState extends State<TabsDemo>
                         },
                       );
                     },
-                    child: const Text('Open Alert'),
+                    child: const Text('Show Alert'),
                   ),
                 ],
               ),
             ),
           ),
 
+          // Tab 2 — Image + TextField
           Container(
-            color: Colors.purple.shade100,
-            padding: const EdgeInsets.all(20),
+            color: colors[1],
             child: Center(
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.network(
-                      'https://commons.wikimedia.org/wiki/Special:Redirect/file/Pteranodon.jpg',
-                      width: 250,
-                      height: 180,
-                      fit: BoxFit.cover,
-                    ),
-                    const SizedBox(height: 25),
-                    const TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Your Name',
-                        hintText: 'Enter your name',
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.network(
+                    'https://imgs.search.brave.com/F5cv1jGqLkdJLfD5uPcK3I8gb2Td2BVxB0CTC2HHwGI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wNDgv/NDQ3Lzg2Ny9zbWFs/bC9jdXRlLWtpdHRl/bi1zbGVlcGluZy15/YXduaW5nLWFuZC1s/YXppbmctb24tYS13/aGl0ZS1yYXNmdXIt/Y2FycGV0LWludGVy/bmF0aW9uYWwtY2F0/LWRheS1jb25jZXB0/LXBob3RvLmpwZw',
+                    width: 150,
+                    height: 150,
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 30),
+                    child: TextField(
+                      decoration: const InputDecoration(
+                        labelText: 'Enter text',
+                        hintText: 'Type something here',
                         border: OutlineInputBorder(),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
 
+          // Tab 3 — Button + SnackBar
           Container(
-            color: Colors.orange.shade100,
+            color: colors[2],
             child: Center(
               child: ElevatedButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Button pressed in ${tabs[2]} tab!'),
+                      content: Text(
+                        '${tabs[2]} button was clicked!',
+                      ),
                     ),
                   );
                 },
@@ -157,39 +179,39 @@ class _TabsDemoState extends State<TabsDemo>
             ),
           ),
 
+          // Tab 4 — ListView + Cards
           Container(
-            color: Colors.green.shade100,
+            color: colors[3],
             child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: const [
+              children: [
                 Card(
-                  elevation: 4,
                   child: ListTile(
-                    leading: Icon(Icons.school),
-                    title: Text('Item 1'),
-                    subtitle: Text('Details for item 1'),
+                    leading: const Icon(Icons.star),
+                    title: const Text('Item 1'),
+                    subtitle: const Text('This is the first item.'),
                   ),
                 ),
                 Card(
-                  elevation: 4,
                   child: ListTile(
-                    leading: Icon(Icons.book),
-                    title: Text('Item 2'),
-                    subtitle: Text('Details for item 2'),
+                    leading: const Icon(Icons.favorite),
+                    title: const Text('Item 2'),
+                    subtitle: const Text('This is the second item.'),
                   ),
                 ),
                 Card(
-                  elevation: 4,
                   child: ListTile(
-                    leading: Icon(Icons.star),
-                    title: Text('Item 3'),
-                    subtitle: Text('Details for item 3'),
+                    leading: const Icon(Icons.home),
+                    title: const Text('Item 3'),
+                    subtitle: const Text('This is the third item.'),
                   ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.white,
       ),
     );
   }
